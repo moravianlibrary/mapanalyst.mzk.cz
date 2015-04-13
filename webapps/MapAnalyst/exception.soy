@@ -1,0 +1,52 @@
+{namespace mapanalyst.export}
+
+
+/**
+ * html exception generator
+ * @param header
+ * @param message
+ */
+{template .exception autoescape="false"}
+
+{literal}
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<link rel="stylesheet" href="{/literal}http://mapanalyst.mzk.cz/{literal}style.css">
+        <!--[if lte IE 8]>
+        <link rel="stylesheet" href="{/literal}http://mapanalyst.mzk.cz/{literal}styleIE.css">
+        <![endif]-->
+        <title>MapAnalyst Online - Exception</title>     
+    </head>
+   
+<body>
+<div id="header">
+      <div style="float:left">
+	<a href="http://www.georeferencer.org">
+	  <img src="http://www.georeferencer.org/img/logo42.png"
+	       alt="Old Maps Online: Antique Maps &amp; Open-Source"
+	       width="42" height="42" style="border:0; margin-right: 10px;"/>
+        </a>
+      </div>
+      <h1>Georeferencer: Map Analyst</h1>
+      <h2>Accuracy analysis of old maps.</h2>
+      </div>
+    </div>
+    <div id="main">
+    <div id="exception">
+    <h1>{/literal}{$header}{literal}</h1>
+    <p>{/literal}{$message}{literal}</p>
+
+    </div>
+    </div>
+
+    <div id="footer">
+      Developed by <a href="http://www.klokantech.com/">Klokan Technologies GmbH</a> and
+      <a href="http://www.mzk.cz/">Moravian Library Brno</a> (project <a href="http://www.oldmapsonline.org/">OldMapsOnline.org</a>).
+    </div>
+    </body>
+</html>
+
+{/literal}
+{/template}

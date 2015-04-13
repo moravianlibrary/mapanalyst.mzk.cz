@@ -1,0 +1,377 @@
+{namespace mapanalyst.export}
+
+
+/**
+* html iframe generator
+* @param width
+* @param height
+* @param type
+* @param image
+* @param map_id
+* @param servlet_map_url
+* @param data_url
+* @param georeferencer_map_url
+*/
+{template .iframe autoescape="false"}
+
+{literal}
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <title>MapAnalyst Online - Vector Overlay</title>
+        <link rel="stylesheet" href="{/literal}http://mapanalyst.mzk.cz/{literal}style.css">
+        <!--[if lte IE 8]>
+        <link rel="stylesheet" href="{/literal}http://mapanalyst.mzk.cz/{literal}styleIE.css">
+        <![endif]-->
+        <script type="text/javascript" src="http://www.openlayers.org/api/OpenLayers.js"></script>
+
+        <script type="text/javascript">
+            {/literal}
+            var width = {$width};
+            var height = {$height};
+            var image = "{$image}";
+            var type = "{$type}";
+            var map_id = "{$map_id}";
+            var servlet_map_url = "{$servlet_map_url}";
+            var map;
+            {literal}
+        </script>
+               
+        <script type="text/javascript">
+
+
+            function getTransformationValue() {
+                return document.getElementById("transformation").value;
+            }
+
+            function getProjectionValue() {
+                return document.getElementById("projection").value;
+            }
+
+            function getHttpRequest() {
+                if (window.ActiveXObject) {
+                    return new ActiveXObject("Microsoft.XMLHTTP");
+                } else {
+                    return new XMLHttpRequest();
+                }
+            }
+
+            function callRepaintVisualizations() {
+                var projectionValue = getProjectionValue();
+                var transformationValue = getTransformationValue();
+                var url = servlet_map_url + "&projection=" + projectionValue + "&transformation=" + transformationValue + "&format=json";
+                var httpRequest = getHttpRequest();
+                httpRequest.open("GET", url, true);
+                httpRequest.onreadystatechange= function () {repaintVisualizations(httpRequest); } ;
+                httpRequest.send(null);
+            }
+
+
+            function repaintVisualizations(httpRequest) {
+                if (httpRequest.readyState == 4) {
+                    if(httpRequest.status == 200) {
+                        var newData = eval("(" + httpRequest.responseText + ")");
+                        map.layers[1].removeAllFeatures();
+                        map.layers[2].removeAllFeatures();
+                        map.layers[3].removeAllFeatures();
+                        map.layers[4].removeAllFeatures();
+                        map.layers[5].removeAllFeatures();
+                        var geoFormat = new OpenLayers.Format.GeoJSON();
+                        map.layers[1].addFeatures(geoFormat.read(newData.distortion));
+                        map.layers[2].addFeatures(geoFormat.read(newData.displacement_circles));
+                        map.layers[3].addFeatures(geoFormat.read(newData.displacement_vectors));
+                        map.layers[4].addFeatures(geoFormat.read(newData.isolines_scale));
+                        map.layers[5].addFeatures(geoFormat.read(newData.isolines_rotation));
+                    }
+                    else {
+                        //alert("error");
+                    }
+                }
+            }
+
+
+
+
+
+            function jsonPcall(data) {
+                var geoFormat = new OpenLayers.Format.GeoJSON();
+                var displacementVectorsFeatures = geoFormat.read(data.displacement_vectors);
+                var displacementCirclesFeatures = geoFormat.read(data.displacement_circles);
+                //  var mekenkampCirclesFeatures = geoFormat.read(data.mekenkamp_circles);
+                var distortionFeatures = geoFormat.read(data.distortion);
+                var isolinesRotationFeatures = geoFormat.read(data.isolines_rotation);
+                var isolinesScaleFeatures = geoFormat.read(data.isolines_scale);
+
+                //   var infoDiv = document.getElementById('info');
+                //    infoDiv.innerHTML = "Scale & Rotation Info: " + data.scaleRot_info;
+
+                //               var reportDiv = document.getElementById('report');
+                //      reportDiv.innerHTML = "Transformation report: " + data.transformation_report;
+
+
+                var vectorsContext = {
+                    getColor: function(feature) {
+                        return feature.attributes['color'];
+                    }
+                };
+
+                var circlesContext = {
+                    getRadius: function(feature) {
+                        return parseInt((feature.attributes['radius']* (1/map.resolution) ) );
+                    },
+                    getColor: function(feature) {
+                        return feature.attributes['color'];
+                    }
+                };
+
+                /*
+                var mCirclesContext = {
+                    getRadius: function(feature) {
+                        return parseInt((feature.attributes['radius']* (1/map.resolution) ) );
+                    }
+                };
+                 */
+                var vectorsTemplate = {
+                    strokeColor: "${getColor}",
+                    strokeWidth: 2.0
+                };
+
+
+                var circlesTemplate = {
+                    pointRadius: "${getRadius}",
+                    strokeColor: "${getColor}",
+                    strokeWidth: 2.0,
+                    fillColor: "#FFFFFF",
+                    fillOpacity: 0.5
+                };
+
+                /*
+                var mCirclesTemplate = {
+                    pointRadius: "${getRadius}",
+                    strokeColor: "#0F0",
+                    strokeWidth: 2.0,
+                   // fillColor: "#FFFFFF",
+                    fillOpacity: 0
+                };
+                 */
+                var vectorsStyle = new OpenLayers.Style(vectorsTemplate, {context: vectorsContext});
+
+                var circlesStyle = new OpenLayers.Style(circlesTemplate, {context: circlesContext});
+
+                //  var mCirclesStyle = new OpenLayers.Style(mCirclesTemplate, {context: mCirclesContext});
+
+                var distortionStyle = new OpenLayers.Style({
+                    strokeColor: "#000000",
+                    strokeWidth: 1.5
+                });
+
+                var isolinesRotationStyle = new OpenLayers.Style({
+                    strokeColor: "#0000FF",
+                    strokeWidth: 1.5
+                    /*    label : "123213.22",
+                    fontSize: "12px",
+                    fontColor: "red",
+                    fontFamily: "Courier New, monospace",
+                    fontWeight: "bold",
+                    labelAlign: "lb",
+                    labelXOffset: 50,
+                    labelYOffset: -15
+                     */
+                });
+
+                var isolinesScaleStyle = new OpenLayers.Style({
+                    strokeColor: "#000000",
+                    strokeWidth: 1.5
+                });
+
+                var displacementVectors = new OpenLayers.Layer.Vector("displacement vectors", {styleMap: new OpenLayers.StyleMap({'default': vectorsStyle})});
+                displacementVectors.addFeatures(displacementVectorsFeatures);
+
+
+                var displacementCircles = new OpenLayers.Layer.Vector("displacement circles", {styleMap: new OpenLayers.StyleMap({'default': circlesStyle})});
+                displacementCircles.addFeatures(displacementCirclesFeatures);
+
+                //      var mekenkampCircles = new OpenLayers.Layer.Vector("mekenkamp circles", {styleMap: new OpenLayers.StyleMap({'default': mCirclesStyle})});
+                //      mekenkampCircles.addFeatures(mekenkampCirclesFeatures);
+
+
+                var isolinesScale = new OpenLayers.Layer.Vector("isolines (scale)", {styleMap: new OpenLayers.StyleMap({'default': isolinesScaleStyle})});
+                isolinesScale.addFeatures(isolinesScaleFeatures);
+                isolinesScale.visibility = false;
+                
+
+                var isolinesRotation = new OpenLayers.Layer.Vector("isolines (rotation)", {styleMap: new OpenLayers.StyleMap({'default': isolinesRotationStyle})});
+                isolinesRotation.addFeatures(isolinesRotationFeatures);
+                isolinesRotation.visibility = false;
+
+                var distortion = new OpenLayers.Layer.Vector("distortion grid", {styleMap: new OpenLayers.StyleMap({'default': distortionStyle})});
+                distortion.addFeatures(distortionFeatures);
+
+
+                /* var userHoverControl = new OpenLayers.Control.SelectFeature(
+                 isolinesRotation,
+                 {
+                         hover: true,
+                         highlightOnly: true,
+                         clickout: false,
+                         toggle: false,
+                         multiple: false,
+                         overFeature: function(feature) {
+                                console.log("sss");
+                         },
+                         outFeature: function(feature) {
+                                console.log("ddd");
+                         },
+                 }
+           );
+                 */
+                //   map.addControl(userHoverControl);
+                // userHoverControl.activate();
+
+
+
+                map.addLayers([distortion, displacementCircles, displacementVectors, isolinesScale, isolinesRotation]);//, mekenkampCircles]);
+            }
+        </script>
+
+
+        <script type="text/javascript">
+
+
+            function getVisibleLayers() {
+                var vLayers = "image";
+                if(map.layers[1].visibility) {
+                    vLayers += ",distortion";
+                }
+                if(map.layers[2].visibility) {
+                    vLayers += ",displacement_circles";
+                }
+                if(map.layers[3].visibility) {
+                    vLayers += ",displacement_vectors";
+                }
+                if(map.layers[4].visibility) {
+                    vLayers += ",isolines_scale";
+                }
+                if(map.layers[5].visibility) {
+                    vLayers += ",isolines_rotation";
+                }
+                return vLayers;
+            }
+
+            function getSVGOutputURL() {
+                return servlet_map_url + "&format=svg_thumb&output=" + getVisibleLayers() + "&projection=" + getProjectionValue() + "&transformation=" + getTransformationValue();
+            }
+
+
+
+
+            function init(){
+                image_bounds = new OpenLayers.Bounds(0, 0, width, height);
+                forwardTransform = function(point) {
+                    //	point.y = (-1) * point.y - IMAGE_HEIGHT;
+                    return point;
+                }
+                backwardTransform = function(point) {
+                    //	point.y = (-1) * point.y + IMAGE_HEIGHT;
+                    return point;
+                }
+                OpenLayers.Projection.addTransform("RASTER", "EPSG:4326", forwardTransform);
+                OpenLayers.Projection.addTransform("EPSG:4326", "RASTER", backwardTransform);
+                src = new OpenLayers.Projection("RASTER");
+                dst = new OpenLayers.Projection("EPSG:4326");
+                preFeatureInsert = function(feature) {
+                    return feature.geometry.transform(dst, src);
+                }
+                var maxRes;
+                var zoomLevel;
+                var oldmap;
+                if (type == "image") {
+                    maxRes = "auto";
+                    zoomLevel = 8;
+                    oldmap = new OpenLayers.Layer.Image(
+                    "Old Map",
+                    image,
+                    new OpenLayers.Bounds(0, 0, width, height),
+                    new OpenLayers.Size(width/10, height/10),
+                    {});
+                } else {
+                    oldmap = new OpenLayers.Layer.Zoomify( "Old Map", image,
+                    new OpenLayers.Size(width, height));
+                    maxRes = Math.pow(2, oldmap.numberOfTiers-1 );
+                    zoomLevel = oldmap.numberOfTiers;
+                }
+                var options = {
+                    controls: [],
+                    maxExtent: new OpenLayers.Bounds(0, 0, width, height),
+                    displayProjection: new OpenLayers.Projection("RASTER"),
+                    maxResolution: maxRes,
+                    numZoomLevels: zoomLevel,
+                    units: 'pixels'
+                };
+                map = new OpenLayers.Map("map", options);
+
+
+                var switcherControl = new OpenLayers.Control.LayerSwitcher();
+                map.addControl(switcherControl);
+                switcherControl.maximizeControl();
+                map.addControl(new OpenLayers.Control.MousePosition());
+                map.addControl(new OpenLayers.Control.PanZoomBar());
+                map.addControl(new OpenLayers.Control.Navigation());
+                //map.addControl(new OpenLayers.Control.MouseDefaults());
+                map.addControl(new OpenLayers.Control.KeyboardDefaults());
+                if (type == "image") {
+                    map.addControl(new OpenLayers.Control.OverviewMap());
+                }
+
+                map.addLayer(oldmap);
+
+                map.zoomToMaxExtent();
+
+                var head= document.getElementsByTagName('head')[0];
+                var script= document.createElement('script');
+                script.type= 'text/javascript';
+                {/literal}
+                script.src= "{$data_url}";
+                {literal}
+                head.appendChild(script);
+            }
+
+        </script>
+
+    </head>
+    <body onload="init();">
+        <div id="map"></div>
+        <div id="options">
+            <a href="{/literal}{$georeferencer_map_url}{literal}" target="_parent">Go to the georeferencer map page.</a>
+            Export to: <a href="#" onClick="window.open(getSVGOutputURL())">SVG</a><!--, <a href="#">JPG</a>, <a href="#">PDF</a>-->
+            <div id="opt_right">
+                <table align="right">
+                    <tr><td>
+                            Projection:
+                            <select id="projection" onchange="callRepaintVisualizations()">
+                                <option value="0" selected="selected">Transverse Cylindrical Equal Area</option>
+                                <option value="1">Cylindrical Equal-Area</option>
+                                <option value="2">Equidistant Cylindrical (Plate Carree)</option>
+                                <option value="3">Mercator</option>
+                                <option value="4">Transverse Mercator</option>
+                                <option value="5">Lambert Conformal Conic</option>
+                            </select>
+                        </td><td>
+                            Transformation:
+                            <select id="transformation" onchange="callRepaintVisualizations()">
+                                <option value="0" selected="selected">Helmert 4 Paramaters</option>
+                                <option value="1">Affine 5 Parameters</option>
+                                <option value="2">Affine 6 Parameters</option>
+                                <option value="3">Huber Estimator</option>
+                                <option value="4">V Estimator</option>
+                                <option value="5">Hampel Estimator</option>
+                            </select>
+                        </td></tr>
+                </table>
+            </div>
+        </div>
+    </body>
+</html>
+{/literal}
+{/template}

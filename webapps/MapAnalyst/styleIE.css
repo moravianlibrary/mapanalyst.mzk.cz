@@ -1,0 +1,9 @@
+#main {
+  height:expression(document.body.clientHeight-140);
+  width:expression(document.body.clientWidth-60);
+}
+
+#map {
+  height:expression(document.body.clientHeight-62);
+  width:expression(document.body.clientWidth-20);
+}
