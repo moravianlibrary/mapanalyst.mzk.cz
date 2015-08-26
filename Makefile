@@ -4,4 +4,5 @@ build:
 	docker build -t mapanalyst .
 
 run:
-	docker run -i -t -p 9001:8080 mapanalyst
+	-docker rm mapanalyst
+	docker run -i -t -p 9001:8080 --name mapanalyst mapanalyst
