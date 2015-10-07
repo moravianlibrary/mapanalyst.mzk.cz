@@ -34,7 +34,7 @@ case "$1" in
       touch $LOCK
       echo "Starting mapanalyst.."
       docker run --name $CONTAINER_NAME -p 127.0.0.1:9001:8080 $IMAGE_NAME &
-      echo "[OK] Imagesearch is running."
+      echo "[OK] Mapanalyst is running."
     fi
     ;;
   stop)
