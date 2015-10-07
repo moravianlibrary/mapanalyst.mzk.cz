@@ -33,7 +33,7 @@ case "$1" in
     else
       touch $LOCK
       echo "Starting mapanalyst.."
-      docker run --name $CONTAINER_NAME -p 9001:8080 $IMAGE_NAME &
+      docker run --name $CONTAINER_NAME -p 127.0.0.1:9001:8080 $IMAGE_NAME &
       echo "[OK] Imagesearch is running."
     fi
     ;;
@@ -115,18 +115,4 @@ After it enable new settings and reload apache server.
 ```
 # a2ensite mapanalyst.mzk.cz
 # service apache2 reload
-```
-
-**Attention**: Docker's default behavior is that it modifies iptables configuration and enables exposed ports defined by -p option. It is possible override this behavior by adding --iptables=false to the Docker daemon.
-
-On Debian based systems, you can edit /etc/default/docker and uncomment the DOCKER_OPTS line:
-
-```
-DOCKER_OPTS="--dns 8.8.8.8 --dns 8.8.4.4 --iptables=false"
-```
-
-After doing that, you need to restart Docker with
-
-```
-# /etc/init.d/docker restart
 ```
